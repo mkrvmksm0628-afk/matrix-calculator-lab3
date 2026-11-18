@@ -83,16 +83,23 @@ void print_matrix(Matrix m) {
     const auto flags = std::cout.flags();
     const auto precision = std::cout.precision();
     std::cout << std::fixed << std::setprecision(2);
-    constexpr int limit = 10;
-    for (int i = 0; i < std::min(m.rows, limit); ++i) {
+    constexpr int max_rows = 10, max_cols = 8;
+    for (int i = 0; i < m.rows; ++i) {
+        if (i == max_rows / 2 && m.rows > max_rows) {
+            std::cout << "[...]\n";
+            i = m.rows - max_rows / 2;
+        }
         std::cout << '[';
-        for (int j = 0; j < std::min(m.cols, limit); ++j)
+        for (int j = 0; j < m.cols; ++j) {
+            if (j == max_cols / 2 && m.cols > max_cols) {
+                std::cout << " ...";
+                j = m.cols - max_cols / 2;
+            }
             std::cout << std::setw(8) << m.data[i][j];
-        if (m.cols > limit) std::cout << " ...";
+        }
         std::cout << "]\n";
     }
-    if (m.rows > limit) std::cout << "[...]\n";
-    if (m.rows > limit || m.cols > limit)
+    if (m.rows > max_rows || m.cols > max_cols)
         std::cout << "Matrix " << m.rows << " x " << m.cols << '\n';
     std::cout.flags(flags);
     std::cout.precision(precision);

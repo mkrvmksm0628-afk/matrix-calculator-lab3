@@ -127,10 +127,14 @@ TEST_F(MatrixTest, PrintFormatting) {
 
 TEST_F(MatrixTest, PrintLargeMatrix) {
     a = create_matrix(11, 12);
+    a.data[5][5] = 123.25;
+    a.data[10][11] = 456.50;
     std::ostringstream output;
     auto* previous = std::cout.rdbuf(output.rdbuf());
     print_matrix(a);
     std::cout.rdbuf(previous);
     EXPECT_NE(output.str().find("[...]"), std::string::npos);
     EXPECT_NE(output.str().find("Matrix 11 x 12"), std::string::npos);
+    EXPECT_EQ(output.str().find("123.25"), std::string::npos);
+    EXPECT_NE(output.str().find("456.50"), std::string::npos);
 }
