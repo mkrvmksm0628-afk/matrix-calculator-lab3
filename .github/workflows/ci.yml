@@ -1,0 +1,53 @@
+name: Matrix Calculator CI
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libgtest-dev doxygen graphviz valgrind
+      - name: Build C++17 project
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build --parallel 2
+      - name: Run Google Test through CTest
+        run: |
+          mkdir -p logs
+          ctest --test-dir build --verbose --output-log logs/ctest.log
+      - name: Check allocations with Valgrind
+        run: |
+          valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 \
+            --log-file=logs/valgrind.log ./build/tests/matrix_tests
+          cat logs/valgrind.log
+      - name: Generate Doxygen HTML
+        run: |
+          doxygen Doxyfile
+          test -s docs/html/index.html
+      - name: Build Docker image
+        run: docker build -t matrix-calculator .
+      - name: Run calculator in Docker
+        shell: bash
+        run: |
+          set -o pipefail
+          docker run --rm matrix-calculator | tee logs/docker.log
+          grep -Fx 'trace(A) = 5' logs/docker.log
+          grep -Fx 'trace(A * B) = 69' logs/docker.log
+      - name: Upload documentation and logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-calculator-results
+          path: |
+            docs/html
+            logs
